@@ -35,6 +35,34 @@ UNIT(path_allocation_strategy, BL_TEST_GROUP_GEOMETRY_CONTAINERS) {
   }
 }
 
+UNIT(path_stroke_subpixel_cubic, BL_TEST_GROUP_GEOMETRY_CONTAINERS) {
+  // The cubic is approximated by quads, one of which is nearly collinear and turns back on itself. After a split at
+  // its turning point, the derivative of the rest of the quad is only rounding noise, and the offsetting loop used to
+  // split the same curve forever (#269).
+  INFO("Testing whether stroking a sub-pixel cubic terminates");
+
+  BLPath path;
+  path.move_to(623.61953000604717, 711.94969687666287);
+  path.line_to(624.3877062003628, 712.71734821265682);
+  path.cubic_to(624.96383834609946, 712.52543537865824,
+                624.57975024894165, 712.71734821265682,
+                624.96383834609946, 712.33352254465979);
+
+  BLStrokeOptions options;
+  options.width = 1.0;
+  options.start_cap = BL_STROKE_CAP_ROUND;
+  options.end_cap = BL_STROKE_CAP_ROUND;
+  options.join = BL_STROKE_JOIN_ROUND;
+
+  BLPath stroked;
+  EXPECT_SUCCESS(stroked.add_stroked_path(path, options, bl_default_approximation_options));
+
+  BLBox box;
+  EXPECT_SUCCESS(stroked.get_bounding_box(&box));
+  EXPECT_GT(box.x1, box.x0);
+  EXPECT_GT(box.y1, box.y0);
+}
+
 } // {Tests}
 } // {bl}
 
